@@ -12,18 +12,39 @@ struct EndpointDetailScreen: View {
     let endpointId: String
     @EnvironmentObject private var router: AppRouter
     
-    // TODO: Replace with ViewModel in Phase 2
+    // TODO: Replace with ViewModel in Phase 2/3
     @State private var selectedTimeRange: TimeRange = .day
+    
+    // Reliability Score (Mock)
+    let reliabilityScore: Double = 92
     
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Status Header
-                EndpointStatusHeader(
-                    status: .healthy,
-                    latency: 125,
-                    uptime: 99.8
-                )
+                // Header with Reliability Score
+                HStack(spacing: 16) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Online")
+                            .font(.title2.bold())
+                            .foregroundStyle(.green)
+                        
+                        Text("Last checked: Just now")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    ReliabilityScoreView(
+                        score: reliabilityScore,
+                        trend: .improving,
+                        size: 80,
+                        showLabel: false
+                    )
+                }
+                .padding()
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 16))
                 .padding(.horizontal)
                 
                 // Time Range Picker
@@ -35,35 +56,57 @@ struct EndpointDetailScreen: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
                 
-                // Latency Chart
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Latency")
-                        .font(.headline)
+                // Charts Section
+                VStack(spacing: 16) {
+                    LatencyChartView(
+                        dataPoints: sampleLatencyData,
+                        baseline: 120,
+                        height: 200
+                    )
                     
-                    LatencyChartView(dataPoints: LatencyDataPoint.sampleData)
-                        .frame(height: 200)
-                }
-                .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .padding(.horizontal)
-                
-                // Error Rate Section
-                VStack(alignment: .leading, spacing: 12) {
-                    Text("Error Rate")
-                        .font(.headline)
+                    UptimeChartView(
+                        dataPoints: sampleUptimeData,
+                        height: 160
+                    )
                     
-                    ErrorRateChartView()
-                        .frame(height: 150)
+                    ErrorRateChartView(
+                        dataPoints: sampleErrorData,
+                        height: 160
+                    )
                 }
-                .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
                 .padding(.horizontal)
                 
                 // Statistics Grid
-                StatisticsGrid()
-                    .padding(.horizontal)
+                LazyVGrid(columns: [
+                    GridItem(.flexible()),
+                    GridItem(.flexible())
+                ], spacing: 12) {
+                    StatCard(
+                        title: "Avg Latency",
+                        value: "125ms",
+                        icon: "clock.fill",
+                        color: .blue
+                    )
+                    StatCard(
+                        title: "P95 Latency",
+                        value: "280ms",
+                        icon: "chart.line.uptrend.xyaxis",
+                        color: .orange
+                    )
+                    StatCard(
+                        title: "Success Rate",
+                        value: "99.8%",
+                        icon: "checkmark.circle.fill",
+                        color: .green
+                    )
+                    StatCard(
+                        title: "Total Requests",
+                        value: "12.4K",
+                        icon: "arrow.up.arrow.down",
+                        color: .purple
+                    )
+                }
+                .padding(.horizontal)
                 
                 // Recent Incidents
                 VStack(alignment: .leading, spacing: 12) {
@@ -80,10 +123,7 @@ struct EndpointDetailScreen: View {
                     )
                     .padding(.horizontal)
                 }
-                
-                Spacer(minLength: 20)
             }
-            .padding(.top)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Endpoint Details")
@@ -116,6 +156,34 @@ struct EndpointDetailScreen: View {
             }
         }
     }
+    
+    // MARK: - Sample Data
+    private var sampleLatencyData: [LatencyDataPoint] {
+        (0..<24).map { hour in
+            LatencyDataPoint(
+                timestamp: Date().addingTimeInterval(-Double(24 - hour) * 3600),
+                latency: Double.random(in: 100...200)
+            )
+        }
+    }
+    
+    private var sampleUptimeData: [UptimeDataPoint] {
+        (0..<7).map { day in
+            UptimeDataPoint(
+                date: Calendar.current.date(byAdding: .day, value: -day, to: Date())!,
+                uptimePercentage: Double.random(in: 98...100)
+            )
+        }.reversed()
+    }
+    
+    private var sampleErrorData: [ErrorRateDataPoint] {
+        (0..<24).map { hour in
+            ErrorRateDataPoint(
+                timestamp: Date().addingTimeInterval(-Double(24 - hour) * 3600),
+                errorRate: Double.random(in: 0...0.02)
+            )
+        }
+    }
 }
 
 // MARK: - Time Range
@@ -126,171 +194,6 @@ enum TimeRange: String, CaseIterable {
     case month = "30D"
     
     var label: String { rawValue }
-}
-
-// MARK: - Status Header
-struct EndpointStatusHeader: View {
-    let status: EndpointStatus
-    let latency: Double
-    let uptime: Double
-    
-    var body: some View {
-        HStack(spacing: 24) {
-            // Status Indicator
-            VStack(spacing: 8) {
-                Circle()
-                    .fill(status.color)
-                    .frame(width: 16, height: 16)
-                Text(status.displayName)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Divider()
-                .frame(height: 40)
-            
-            // Current Latency
-            VStack(spacing: 4) {
-                Text("\(Int(latency))ms")
-                    .font(.title2.bold())
-                Text("Latency")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-            
-            Divider()
-                .frame(height: 40)
-            
-            // Uptime
-            VStack(spacing: 4) {
-                Text(String(format: "%.1f%%", uptime))
-                    .font(.title2.bold())
-                    .foregroundStyle(.green)
-                Text("Uptime")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-// MARK: - Latency Chart View
-struct LatencyChartView: View {
-    let dataPoints: [LatencyDataPoint]
-    
-    var body: some View {
-        Chart(dataPoints) { point in
-            LineMark(
-                x: .value("Time", point.timestamp),
-                y: .value("Latency", point.latencyMs)
-            )
-            .foregroundStyle(.blue)
-            .interpolationMethod(.catmullRom)
-            
-            AreaMark(
-                x: .value("Time", point.timestamp),
-                y: .value("Latency", point.latencyMs)
-            )
-            .foregroundStyle(
-                .linearGradient(
-                    colors: [.blue.opacity(0.3), .blue.opacity(0.05)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-            )
-            .interpolationMethod(.catmullRom)
-            
-            if point.isAnomaly {
-                PointMark(
-                    x: .value("Time", point.timestamp),
-                    y: .value("Latency", point.latencyMs)
-                )
-                .foregroundStyle(.red)
-                .symbolSize(100)
-            }
-        }
-        .chartYAxisLabel("ms")
-        .chartXAxis {
-            AxisMarks(values: .automatic(desiredCount: 6))
-        }
-    }
-}
-
-// MARK: - Error Rate Chart View
-struct ErrorRateChartView: View {
-    var body: some View {
-        Chart {
-            ForEach(0..<7, id: \.self) { day in
-                BarMark(
-                    x: .value("Day", Calendar.current.shortWeekdaySymbols[day]),
-                    y: .value("Errors", Double.random(in: 0...5))
-                )
-                .foregroundStyle(.blue.gradient)
-                .clipShape(RoundedRectangle(cornerRadius: 4))
-            }
-        }
-        .chartYAxisLabel("%")
-    }
-}
-
-// MARK: - Statistics Grid
-struct StatisticsGrid: View {
-    var body: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible()),
-            GridItem(.flexible())
-        ], spacing: 12) {
-            StatCard(title: "Avg Latency", value: "125ms", icon: "clock.fill", color: .blue)
-            StatCard(title: "P95 Latency", value: "280ms", icon: "chart.line.uptrend.xyaxis", color: .orange)
-            StatCard(title: "Success Rate", value: "99.8%", icon: "checkmark.circle.fill", color: .green)
-            StatCard(title: "Total Requests", value: "12.4K", icon: "arrow.up.arrow.down", color: .purple)
-        }
-    }
-}
-
-// MARK: - Stat Card
-struct StatCard: View {
-    let title: String
-    let value: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundStyle(color)
-                Spacer()
-            }
-            
-            Text(value)
-                .font(.title2.bold())
-            
-            Text(title)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-        }
-        .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-// MARK: - Sample Data Extension
-extension LatencyDataPoint {
-    static var sampleData: [LatencyDataPoint] {
-        (0..<24).map { hour in
-            LatencyDataPoint(
-                timestamp: Date().addingTimeInterval(TimeInterval(-hour * 3600)),
-                latencyMs: Double.random(in: 80...200),
-                isAnomaly: hour == 12
-            )
-        }.reversed()
-    }
 }
 
 #Preview {
