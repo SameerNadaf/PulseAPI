@@ -9,76 +9,130 @@ import SwiftUI
 
 struct DashboardScreen: View {
     @EnvironmentObject private var router: AppRouter
-    
-    // TODO: Replace with ViewModel in Phase 2
-    @State private var overallHealth: Int = 98
-    @State private var endpointCount: Int = 5
-    @State private var activeIncidents: Int = 1
+    @StateObject private var viewModel = DashboardViewModel()
     
     var body: some View {
         ScrollView {
-            VStack(spacing: 20) {
-                // Overall Health Card
-                OverallHealthCard(
-                    healthPercentage: overallHealth,
-                    endpointCount: endpointCount,
-                    activeIncidents: activeIncidents
-                )
-                .padding(.horizontal)
-                
-                // Quick Stats Row
-                QuickStatsRow()
-                    .padding(.horizontal)
-                
-                // Endpoints Section
-                VStack(alignment: .leading, spacing: 12) {
-                    SectionHeader(title: "Monitored Endpoints", action: {
-                        router.switchTab(to: .endpoints)
-                    })
-                    
-                    // Placeholder endpoint cards
-                    ForEach(0..<3, id: \.self) { index in
-                        EndpointRowCard(
-                            name: "API Endpoint \(index + 1)",
-                            url: "api.example.com/v1/endpoint\(index + 1)",
-                            status: index == 0 ? .degraded : .healthy,
-                            latency: Double.random(in: 45...250)
-                        )
-                        .onTapGesture {
-                            router.showEndpointDetail(id: "endpoint-\(index)")
-                        }
-                    }
+            if viewModel.isLoading && viewModel.dashboard == nil {
+                // Initial loading state
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading dashboard...")
+                        .foregroundStyle(.secondary)
                 }
-                .padding(.horizontal)
-                
-                // Recent Incidents Section
-                if activeIncidents > 0 {
+                .frame(maxWidth: .infinity, minHeight: 400)
+            } else {
+                VStack(spacing: 20) {
+                    // Overall Health Card
+                    OverallHealthCard(
+                        healthPercentage: viewModel.overallHealth,
+                        endpointCount: viewModel.endpointCount,
+                        activeIncidents: viewModel.activeIncidents
+                    )
+                    .padding(.horizontal)
+                    
+                    // Quick Stats Row
+                    QuickStatsRow(
+                        healthyCount: viewModel.healthyCount,
+                        degradedCount: viewModel.degradedCount,
+                        downCount: viewModel.downCount
+                    )
+                    .padding(.horizontal)
+                    
+                    // Endpoints Section
                     VStack(alignment: .leading, spacing: 12) {
-                        SectionHeader(title: "Active Incidents", action: {
-                            router.switchTab(to: .incidents)
+                        SectionHeader(title: "Monitored Endpoints", action: {
+                            router.switchTab(to: .endpoints)
                         })
                         
-                        IncidentRowCard(
-                            title: "Latency Spike Detected",
-                            endpoint: "Payment API",
-                            severity: .major,
-                            startedAt: Date().addingTimeInterval(-3600)
-                        )
-                        .onTapGesture {
-                            router.switchTab(to: .incidents)
-                            router.showIncidentDetail(id: "incident-1")
+                        if viewModel.endpoints.isEmpty {
+                            EmptyEndpointsView()
+                        } else {
+                            ForEach(viewModel.endpoints.prefix(5)) { endpoint in
+                                EndpointRowCard(
+                                    name: endpoint.name,
+                                    url: endpoint.id,
+                                    status: endpoint.status,
+                                    latency: endpoint.latency ?? 0
+                                )
+                                .onTapGesture {
+                                    router.showEndpointDetail(id: endpoint.id)
+                                }
+                            }
                         }
                     }
                     .padding(.horizontal)
+                    
+                    // Recent Incidents Section
+                    if !viewModel.recentIncidents.isEmpty {
+                        VStack(alignment: .leading, spacing: 12) {
+                            SectionHeader(title: "Active Incidents", action: {
+                                router.switchTab(to: .incidents)
+                            })
+                            
+                            ForEach(viewModel.recentIncidents.prefix(3)) { incident in
+                                IncidentRowCard(
+                                    title: incident.title,
+                                    endpoint: incident.endpointId,
+                                    severity: incident.severity,
+                                    startedAt: incident.startedAt,
+                                    status: incident.status
+                                )
+                                .onTapGesture {
+                                    router.switchTab(to: .incidents)
+                                    router.showIncidentDetail(id: incident.id)
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    Spacer(minLength: 20)
                 }
-                
-                Spacer(minLength: 20)
+                .padding(.top)
             }
-            .padding(.top)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Dashboard")
         .navigationBarTitleDisplayMode(.large)
+        .refreshable {
+            await viewModel.refresh()
+        }
+        .task {
+            await viewModel.loadDashboard()
+        }
+        .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+            Button("Retry") {
+                Task { await viewModel.refresh() }
+            }
+            Button("Dismiss", role: .cancel) {
+                viewModel.dismissError()
+            }
+        } message: {
+            Text(viewModel.error?.errorDescription ?? "Unknown error")
+        }
+    }
+}
+
+// MARK: - Empty Endpoints View
+struct EmptyEndpointsView: View {
+    var body: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "server.rack")
+                .font(.largeTitle)
+                .foregroundStyle(.secondary)
+            Text("No endpoints yet")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Text("Add an endpoint to start monitoring")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
+        .background(Color(.secondarySystemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
 
@@ -159,27 +213,31 @@ struct StatItem: View {
 
 // MARK: - Quick Stats Row
 struct QuickStatsRow: View {
+    var healthyCount: Int = 0
+    var degradedCount: Int = 0
+    var downCount: Int = 0
+    
     var body: some View {
         HStack(spacing: 12) {
             QuickStatCard(
-                icon: "clock.fill",
-                value: "125ms",
-                label: "Avg Latency",
-                color: .blue
-            )
-            
-            QuickStatCard(
                 icon: "checkmark.circle.fill",
-                value: "99.8%",
-                label: "Uptime",
+                value: "\(healthyCount)",
+                label: "Healthy",
                 color: .green
             )
             
             QuickStatCard(
                 icon: "exclamationmark.triangle.fill",
-                value: "0.2%",
-                label: "Error Rate",
+                value: "\(degradedCount)",
+                label: "Degraded",
                 color: .orange
+            )
+            
+            QuickStatCard(
+                icon: "xmark.circle.fill",
+                value: "\(downCount)",
+                label: "Down",
+                color: .red
             )
         }
     }

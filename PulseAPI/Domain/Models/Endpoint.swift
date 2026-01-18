@@ -57,6 +57,9 @@ struct Endpoint: Identifiable, Codable, Hashable {
     var path: String {
         URL(string: url)?.path ?? "/"
     }
+    
+    // Default status (actual status comes from health summary)
+    var status: EndpointStatus { .unknown }
 }
 
 // MARK: - Endpoint + Defaults

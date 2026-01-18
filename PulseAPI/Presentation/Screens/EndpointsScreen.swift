@@ -9,43 +9,75 @@ import SwiftUI
 
 struct EndpointsScreen: View {
     @EnvironmentObject private var router: AppRouter
-    
-    // TODO: Replace with ViewModel in Phase 2
-    @State private var endpoints: [EndpointPreview] = EndpointPreview.samples
-    @State private var searchText: String = ""
-    
-    private var filteredEndpoints: [EndpointPreview] {
-        if searchText.isEmpty {
-            return endpoints
-        }
-        return endpoints.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText) ||
-            $0.url.localizedCaseInsensitiveContains(searchText)
-        }
-    }
+    @StateObject private var viewModel = EndpointsViewModel()
     
     var body: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(filteredEndpoints) { endpoint in
-                    EndpointRowCard(
-                        name: endpoint.name,
-                        url: endpoint.url,
-                        status: endpoint.status,
-                        latency: endpoint.latency
-                    )
-                    .onTapGesture {
-                        router.navigateToEndpoint(id: endpoint.id)
+        Group {
+            if viewModel.isLoading && viewModel.endpoints.isEmpty {
+                // Loading state
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading endpoints...")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.endpoints.isEmpty {
+                // Empty state
+                ContentUnavailableView(
+                    "No Endpoints",
+                    systemImage: "server.rack",
+                    description: Text("Add an endpoint to start monitoring your APIs")
+                )
+            } else {
+                // Content
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        ForEach(viewModel.filteredEndpoints) { endpoint in
+                            EndpointRowCard(
+                                name: endpoint.name,
+                                url: endpoint.url,
+                                status: endpoint.status,
+                                latency: 0 // TODO: Get from health summary
+                            )
+                            .onTapGesture {
+                                router.navigateToEndpoint(id: endpoint.id)
+                            }
+                            .contextMenu {
+                                Button {
+                                    Task { await viewModel.toggleEndpointActive(endpoint) }
+                                } label: {
+                                    Label(
+                                        endpoint.isActive ? "Pause Monitoring" : "Resume Monitoring",
+                                        systemImage: endpoint.isActive ? "pause.circle" : "play.circle"
+                                    )
+                                }
+                                
+                                Divider()
+                                
+                                Button(role: .destructive) {
+                                    Task { await viewModel.deleteEndpoint(endpoint) }
+                                } label: {
+                                    Label("Delete", systemImage: "trash")
+                                }
+                            }
+                        }
                     }
+                    .padding(.horizontal)
+                    .padding(.top, 8)
                 }
             }
-            .padding(.horizontal)
-            .padding(.top, 8)
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Endpoints")
         .navigationBarTitleDisplayMode(.large)
-        .searchable(text: $searchText, prompt: "Search endpoints")
+        .searchable(text: $viewModel.searchText, prompt: "Search endpoints")
+        .refreshable {
+            await viewModel.refresh()
+        }
+        .task {
+            await viewModel.loadEndpoints()
+        }
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -56,24 +88,17 @@ struct EndpointsScreen: View {
                 }
             }
         }
+        .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+            Button("Retry") {
+                Task { await viewModel.refresh() }
+            }
+            Button("Dismiss", role: .cancel) {
+                viewModel.dismissError()
+            }
+        } message: {
+            Text(viewModel.error?.errorDescription ?? "Unknown error")
+        }
     }
-}
-
-// MARK: - Endpoint Preview (temporary model for UI)
-struct EndpointPreview: Identifiable {
-    let id: String
-    let name: String
-    let url: String
-    let status: EndpointStatus
-    let latency: Double
-    
-    static let samples: [EndpointPreview] = [
-        EndpointPreview(id: "1", name: "User API", url: "api.example.com/v1/users", status: .healthy, latency: 89),
-        EndpointPreview(id: "2", name: "Payment Service", url: "payments.example.com/api/charge", status: .degraded, latency: 450),
-        EndpointPreview(id: "3", name: "Auth Endpoint", url: "auth.example.com/oauth/token", status: .healthy, latency: 120),
-        EndpointPreview(id: "4", name: "Notifications", url: "notify.example.com/v2/push", status: .healthy, latency: 65),
-        EndpointPreview(id: "5", name: "Search API", url: "search.example.com/query", status: .down, latency: 0),
-    ]
 }
 
 #Preview {
@@ -82,3 +107,4 @@ struct EndpointPreview: Identifiable {
     }
     .environmentObject(AppRouter())
 }
+

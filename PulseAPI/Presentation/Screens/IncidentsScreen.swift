@@ -9,54 +9,71 @@ import SwiftUI
 
 struct IncidentsScreen: View {
     @EnvironmentObject private var router: AppRouter
-    
-    // TODO: Replace with ViewModel in Phase 2
-    @State private var selectedFilter: IncidentFilter = .active
-    @State private var incidents: [IncidentPreview] = IncidentPreview.samples
-    
-    private var filteredIncidents: [IncidentPreview] {
-        switch selectedFilter {
-        case .active:
-            return incidents.filter { $0.status != .resolved }
-        case .resolved:
-            return incidents.filter { $0.status == .resolved }
-        case .all:
-            return incidents
-        }
-    }
+    @StateObject private var viewModel = IncidentsViewModel()
     
     var body: some View {
         VStack(spacing: 0) {
             // Filter Picker
-            Picker("Filter", selection: $selectedFilter) {
-                ForEach(IncidentFilter.allCases, id: \.self) { filter in
+            Picker("Filter", selection: $viewModel.selectedFilter) {
+                ForEach(IncidentsViewModel.Filter.allCases, id: \.self) { filter in
                     Text(filter.rawValue).tag(filter)
                 }
             }
             .pickerStyle(.segmented)
             .padding()
             
-            // Incidents List
-            if filteredIncidents.isEmpty {
+            // Content
+            if viewModel.isLoading && viewModel.incidents.isEmpty {
+                VStack(spacing: 20) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading incidents...")
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if viewModel.filteredIncidents.isEmpty {
                 ContentUnavailableView(
                     "No Incidents",
                     systemImage: "checkmark.shield.fill",
-                    description: Text("All systems are operating normally")
+                    description: Text(emptyDescription)
                 )
                 .frame(maxHeight: .infinity)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(filteredIncidents) { incident in
+                        ForEach(viewModel.filteredIncidents) { incident in
                             IncidentRowCard(
                                 title: incident.title,
-                                endpoint: incident.endpointName,
+                                endpoint: incident.endpointId,
                                 severity: incident.severity,
                                 startedAt: incident.startedAt,
                                 status: incident.status
                             )
                             .onTapGesture {
                                 router.showIncidentDetail(id: incident.id)
+                            }
+                            .contextMenu {
+                                if incident.status != .resolved {
+                                    Button {
+                                        Task {
+                                            await viewModel.resolveIncident(incident)
+                                        }
+                                    } label: {
+                                        Label("Mark Resolved", systemImage: "checkmark.circle")
+                                    }
+                                }
+                            }
+                            .swipeActions(edge: .trailing) {
+                                if incident.status != .resolved {
+                                    Button {
+                                        Task {
+                                            await viewModel.resolveIncident(incident)
+                                        }
+                                    } label: {
+                                        Label("Resolve", systemImage: "checkmark")
+                                    }
+                                    .tint(.green)
+                                }
                             }
                         }
                     }
@@ -68,51 +85,34 @@ struct IncidentsScreen: View {
         .background(Color(.systemGroupedBackground))
         .navigationTitle("Incidents")
         .navigationBarTitleDisplayMode(.large)
+        .refreshable {
+            await viewModel.refresh()
+        }
+        .task {
+            await viewModel.loadIncidents()
+        }
+        .alert("Error", isPresented: .constant(viewModel.error != nil)) {
+            Button("Retry") {
+                Task { await viewModel.refresh() }
+            }
+            Button("Dismiss", role: .cancel) {
+                viewModel.dismissError()
+            }
+        } message: {
+            Text(viewModel.error?.errorDescription ?? "Unknown error")
+        }
     }
-}
-
-// MARK: - Incident Filter
-enum IncidentFilter: String, CaseIterable {
-    case active = "Active"
-    case resolved = "Resolved"
-    case all = "All"
-}
-
-// MARK: - Incident Preview (temporary model for UI)
-struct IncidentPreview: Identifiable {
-    let id: String
-    let title: String
-    let endpointName: String
-    let severity: IncidentSeverity
-    let status: IncidentStatus
-    let startedAt: Date
     
-    static let samples: [IncidentPreview] = [
-        IncidentPreview(
-            id: "1",
-            title: "Latency Spike Detected",
-            endpointName: "Payment Service",
-            severity: .major,
-            status: .investigating,
-            startedAt: Date().addingTimeInterval(-3600)
-        ),
-        IncidentPreview(
-            id: "2",
-            title: "High Error Rate",
-            endpointName: "Search API",
-            severity: .critical,
-            status: .active,
-            startedAt: Date().addingTimeInterval(-7200)
-        ),
-        IncidentPreview(
-            id: "3",
-            title: "Timeout Issues",
-            endpointName: "Notifications",
-            severity: .minor,
-            status: .resolved,
-            startedAt: Date().addingTimeInterval(-86400)
-        ),
-    ]
+    private var emptyDescription: String {
+        switch viewModel.selectedFilter {
+        case .active:
+            return "All systems are operating normally"
+        case .resolved:
+            return "No resolved incidents to show"
+        case .all:
+            return "No incidents recorded yet"
+        }
+    }
 }
 
 #Preview {
@@ -121,3 +121,4 @@ struct IncidentPreview: Identifiable {
     }
     .environmentObject(AppRouter())
 }
+
