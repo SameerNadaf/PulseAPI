@@ -111,7 +111,14 @@ struct AddEndpointScreen: View {
         }
         .navigationTitle("Add Endpoint")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden(true)
         .toolbar {
+            ToolbarItem(placement: .cancellationAction) {
+                Button("Cancel") {
+                    dismiss()
+                }
+            }
+            
             ToolbarItem(placement: .confirmationAction) {
                 Button("Add") {
                     // TODO: Save endpoint
