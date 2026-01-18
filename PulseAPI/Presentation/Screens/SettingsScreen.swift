@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SettingsScreen: View {
+    @EnvironmentObject private var themeManager: ThemeManager
     @State private var notificationsEnabled: Bool = true
     @State private var criticalAlertsOnly: Bool = false
     
@@ -63,6 +64,18 @@ struct SettingsScreen: View {
                     Spacer()
                     Text("Jan 18, 2027")
                         .foregroundStyle(.secondary)
+                }
+            }
+            
+            // Appearance Section
+            Section("Appearance") {
+                Picker(selection: $themeManager.appTheme) {
+                    ForEach(AppTheme.allCases) { theme in
+                        Label(theme.rawValue, systemImage: theme.icon)
+                            .tag(theme)
+                    }
+                } label: {
+                    Label("Theme", systemImage: "paintbrush.fill")
                 }
             }
             
@@ -142,5 +155,7 @@ struct SettingsScreen: View {
 #Preview {
     NavigationStack {
         SettingsScreen()
+            .environmentObject(ThemeManager())
     }
 }
+
