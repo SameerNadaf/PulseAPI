@@ -71,8 +71,10 @@ enum NetworkError: LocalizedError {
     
     var isRetryable: Bool {
         switch self {
-        case .timeout, .noConnection, .serverError(let code, _) where code >= 500:
+        case .timeout, .noConnection:
             return true
+        case .serverError(let code, _):
+            return code >= 500
         default:
             return false
         }

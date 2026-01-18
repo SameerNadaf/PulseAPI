@@ -19,7 +19,7 @@ struct AddEndpointScreen: View {
     @State private var timeout: Int = 10
     @State private var showAdvanced: Bool = false
     @State private var headers: String = ""
-    @State private var body: String = ""
+    @State private var requestBody: String = ""
     
     private var isValid: Bool {
         !name.isEmpty && !url.isEmpty && URL(string: url) != nil
@@ -86,7 +86,7 @@ struct AddEndpointScreen: View {
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                             
-                            TextEditor(text: $body)
+                            TextEditor(text: $requestBody)
                                 .font(.system(.body, design: .monospaced))
                                 .frame(height: 80)
                                 .overlay(
@@ -112,12 +112,6 @@ struct AddEndpointScreen: View {
         .navigationTitle("Add Endpoint")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Cancel") {
-                    dismiss()
-                }
-            }
-            
             ToolbarItem(placement: .confirmationAction) {
                 Button("Add") {
                     // TODO: Save endpoint
