@@ -21,8 +21,8 @@ final class APIClient: ObservableObject {
     
     private init() {
         let config = URLSessionConfiguration.default
-        config.timeoutIntervalForRequest = APIConfig.timeout
-        config.timeoutIntervalForResource = APIConfig.timeout * 2
+        config.timeoutIntervalForRequest = APIConfig.requestTimeout
+        config.timeoutIntervalForResource = APIConfig.requestTimeout * 2
         config.waitsForConnectivity = true
         
         self.session = URLSession(configuration: config)
@@ -62,7 +62,7 @@ final class APIClient: ObservableObject {
     func requestWithRetry<T: Decodable>(
         _ endpoint: APIEndpoint,
         expecting: T.Type,
-        maxRetries: Int = APIConfig.maxRetries
+        maxRetries: Int = APIConfig.maxRetryAttempts
     ) async throws -> T {
         var lastError: Error?
         

@@ -88,10 +88,10 @@ final class IncidentsViewModel: ObservableObject {
                     type: updated.type,
                     severity: updated.severity,
                     status: .resolved,
-                    title: updated.title,
-                    description: updated.description,
                     startedAt: updated.startedAt,
                     resolvedAt: Date(),
+                    title: updated.title,
+                    description: updated.description,
                     affectedRegions: updated.affectedRegions,
                     createdAt: updated.createdAt,
                     updatedAt: Date()
@@ -119,15 +119,15 @@ extension IncidentsViewModel {
             Incident(
                 id: "1", endpointId: "ep1",
                 type: .latencySpike, severity: .major, status: .investigating,
-                title: "Latency Spike Detected", description: nil,
                 startedAt: Date().addingTimeInterval(-3600), resolvedAt: nil,
+                title: "Latency Spike Detected", description: nil,
                 affectedRegions: [], createdAt: Date(), updatedAt: Date()
             ),
             Incident(
                 id: "2", endpointId: "ep2",
                 type: .highErrorRate, severity: .critical, status: .active,
-                title: "High Error Rate", description: nil,
                 startedAt: Date().addingTimeInterval(-7200), resolvedAt: nil,
+                title: "High Error Rate", description: nil,
                 affectedRegions: [], createdAt: Date(), updatedAt: Date()
             ),
         ]

@@ -84,10 +84,10 @@ extension IncidentDTO {
             type: incidentType,
             severity: incidentSeverity,
             status: incidentStatus,
-            title: title,
-            description: description,
             startedAt: ISO8601DateFormatter().date(from: startedAt) ?? Date(),
             resolvedAt: resolvedAt.flatMap { ISO8601DateFormatter().date(from: $0) },
+            title: title,
+            description: description,
             affectedRegions: parseRegions(affectedRegions),
             createdAt: ISO8601DateFormatter().date(from: createdAt) ?? Date(),
             updatedAt: ISO8601DateFormatter().date(from: updatedAt) ?? Date()
@@ -110,6 +110,7 @@ extension TimelineEntryDTO {
         
         return IncidentTimelineEntry(
             id: id,
+            incidentId: incidentId,
             status: entryStatus,
             message: message,
             timestamp: ISO8601DateFormatter().date(from: timestamp) ?? Date()

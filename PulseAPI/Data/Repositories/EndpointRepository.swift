@@ -148,12 +148,14 @@ extension HealthSummaryDTO {
         return EndpointHealthSummary(
             endpointId: endpointId,
             status: endpointStatus,
+            reliabilityScore: reliabilityScore,
             currentLatencyMs: currentLatencyMs,
             baselineLatencyMs: baselineLatencyMs,
-            reliabilityScore: reliabilityScore,
             errorRate: errorRate,
-            uptimePercentage: uptimePercentage,
-            lastProbeAt: lastProbeAt.flatMap { ISO8601DateFormatter().date(from: $0) }
+            lastProbeAt: lastProbeAt.flatMap { ISO8601DateFormatter().date(from: $0) },
+            lastIncidentAt: lastIncidentAt.flatMap { ISO8601DateFormatter().date(from: $0) },
+            uptimePercentage: uptimePercentage
         )
     }
 }
+
