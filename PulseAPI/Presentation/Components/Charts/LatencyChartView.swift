@@ -8,12 +8,6 @@
 import SwiftUI
 import Charts
 
-struct LatencyDataPoint: Identifiable {
-    let id = UUID()
-    let timestamp: Date
-    let latency: Double
-}
-
 struct LatencyChartView: View {
     let dataPoints: [LatencyDataPoint]
     let baseline: Double?
@@ -43,14 +37,14 @@ struct LatencyChartView: View {
                     ForEach(dataPoints) { point in
                         LineMark(
                             x: .value("Time", point.timestamp),
-                            y: .value("Latency", point.latency)
+                            y: .value("Latency", point.latencyMs)
                         )
                         .interpolationMethod(.catmullRom)
                         .foregroundStyle(latencyGradient)
                         
                         AreaMark(
                             x: .value("Time", point.timestamp),
-                            y: .value("Latency", point.latency)
+                            y: .value("Latency", point.latencyMs)
                         )
                         .interpolationMethod(.catmullRom)
                         .foregroundStyle(areaGradient)
@@ -109,7 +103,7 @@ struct LatencyChartView: View {
     
     private var averageLatency: Double? {
         guard !dataPoints.isEmpty else { return nil }
-        return dataPoints.reduce(0) { $0 + $1.latency } / Double(dataPoints.count)
+        return dataPoints.reduce(0) { $0 + $1.latencyMs } / Double(dataPoints.count)
     }
     
     private var emptyState: some View {
@@ -130,10 +124,10 @@ struct LatencyChartView: View {
     let sampleData = (0..<24).map { hour in
         LatencyDataPoint(
             timestamp: Date().addingTimeInterval(-Double(24 - hour) * 3600),
-            latency: Double.random(in: 100...300)
+            latencyMs: Double.random(in: 100...300)
         )
     }
     
-    return LatencyChartView(dataPoints: sampleData, baseline: 150)
+    LatencyChartView(dataPoints: sampleData, baseline: 150)
         .padding()
 }

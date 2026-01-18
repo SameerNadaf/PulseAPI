@@ -162,7 +162,7 @@ struct EndpointDetailScreen: View {
         (0..<24).map { hour in
             LatencyDataPoint(
                 timestamp: Date().addingTimeInterval(-Double(24 - hour) * 3600),
-                latency: Double.random(in: 100...200)
+                latencyMs: Double.random(in: 100...200)
             )
         }
     }
