@@ -6,11 +6,17 @@
 //
 
 import SwiftUI
+import FirebaseCore
 
 @main
 struct PulseAPIApp: App {
     @StateObject private var router = AppRouter()
     @StateObject private var themeManager = ThemeManager()
+    
+    init() {
+        // Initialize Firebase
+        FirebaseApp.configure()
+    }
     
     var body: some Scene {
         WindowGroup {

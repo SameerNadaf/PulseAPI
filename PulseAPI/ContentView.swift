@@ -9,9 +9,17 @@ import SwiftUI
 
 struct ContentView: View {
     @EnvironmentObject private var router: AppRouter
+    @StateObject private var authService = FirebaseAuthService.shared
     
     var body: some View {
-        MainTabView()
+        Group {
+            if authService.isAuthenticated {
+                MainTabView()
+            } else {
+                LoginScreen()
+            }
+        }
+        .animation(.easeInOut, value: authService.isAuthenticated)
     }
 }
 
@@ -19,3 +27,4 @@ struct ContentView: View {
     ContentView()
         .environmentObject(AppRouter())
 }
+

@@ -9,8 +9,10 @@ import SwiftUI
 
 struct SettingsScreen: View {
     @EnvironmentObject private var themeManager: ThemeManager
+    @StateObject private var authManager = AuthManager.shared
     @State private var notificationsEnabled: Bool = true
     @State private var criticalAlertsOnly: Bool = false
+    @State private var showSignOutConfirmation = false
     
     var body: some View {
         List {
@@ -22,7 +24,7 @@ struct SettingsScreen: View {
                         .foregroundStyle(.blue)
                     
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("user@example.com")
+                        Text(authManager.userEmail ?? "user@example.com")
                             .font(.headline)
                         
                         HStack(spacing: 4) {
@@ -141,7 +143,7 @@ struct SettingsScreen: View {
             // Danger Zone
             Section {
                 Button(role: .destructive) {
-                    // TODO: Sign out
+                    showSignOutConfirmation = true
                 } label: {
                     Label("Sign Out", systemImage: "rectangle.portrait.and.arrow.right")
                 }
@@ -149,6 +151,14 @@ struct SettingsScreen: View {
         }
         .navigationTitle("Settings")
         .navigationBarTitleDisplayMode(.large)
+        .confirmationDialog("Sign Out", isPresented: $showSignOutConfirmation) {
+            Button("Sign Out", role: .destructive) {
+                authManager.signOut()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Are you sure you want to sign out?")
+        }
     }
 }
 

@@ -20,53 +20,49 @@ final class AuthManager: ObservableObject {
     // MARK: - Dependencies
     private let keychain = KeychainService.shared
     private let apiClient = APIClient.shared
+    private let firebaseAuth = FirebaseAuthService.shared
+    private var cancellables = Set<AnyCancellable>()
     
     private init() {
-        // Check if user is already authenticated
-        loadStoredUser()
+        setupAuthStateObserver()
     }
     
-    // MARK: - Load Stored User
-    private func loadStoredUser() {
-        if let userId = try? keychain.readString(for: KeychainKeys.userId) {
-            apiClient.userId = userId
-            isAuthenticated = true
-            
-            // Load user profile in background
-            Task {
-                await refreshUserProfile()
+    // MARK: - Firebase Auth State Observer
+    private func setupAuthStateObserver() {
+        firebaseAuth.$isAuthenticated
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isAuth in
+                self?.isAuthenticated = isAuth
+                if isAuth {
+                    self?.syncUserWithBackend()
+                } else {
+                    self?.currentUser = nil
+                    self?.apiClient.userId = nil
+                }
             }
+            .store(in: &cancellables)
+        
+        firebaseAuth.$currentUser
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] user in
+                if let userId = user?.uid {
+                    self?.apiClient.userId = userId
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
+    // MARK: - Sync User with Backend
+    private func syncUserWithBackend() {
+        Task {
+            await refreshUserProfile()
         }
-    }
-    
-    // MARK: - Sign In (simplified - no real auth yet)
-    func signIn(userId: String) async throws {
-        isLoading = true
-        defer { isLoading = false }
-        
-        // Store user ID
-        try keychain.save(userId, for: KeychainKeys.userId)
-        apiClient.userId = userId
-        
-        // Fetch user profile
-        await refreshUserProfile()
-        
-        isAuthenticated = true
-    }
-    
-    // MARK: - Sign Out
-    func signOut() {
-        try? keychain.delete(for: KeychainKeys.userId)
-        try? keychain.delete(for: KeychainKeys.authToken)
-        try? keychain.delete(for: KeychainKeys.deviceToken)
-        
-        apiClient.userId = nil
-        currentUser = nil
-        isAuthenticated = false
     }
     
     // MARK: - Refresh User Profile
     func refreshUserProfile() async {
+        guard firebaseAuth.isAuthenticated else { return }
+        
         do {
             let response = try await apiClient.request(
                 UsersAPI.me,
@@ -74,8 +70,19 @@ final class AuthManager: ObservableObject {
             )
             currentUser = response.data
         } catch {
-            // Silently fail - user might not exist yet
             print("Failed to fetch user profile: \(error)")
+        }
+    }
+    
+    // MARK: - Sign Out
+    func signOut() {
+        do {
+            try firebaseAuth.signOut()
+            try? keychain.delete(for: KeychainKeys.deviceToken)
+            currentUser = nil
+            apiClient.userId = nil
+        } catch {
+            print("Sign out error: \(error)")
         }
     }
     
@@ -93,9 +100,12 @@ final class AuthManager: ObservableObject {
         }
     }
     
-    // MARK: - Guest Mode (for demo/development)
-    func signInAsGuest() async {
-        let guestId = "guest-\(UUID().uuidString.prefix(8))"
-        try? await signIn(userId: guestId)
+    // MARK: - User Info
+    var userEmail: String? {
+        firebaseAuth.userEmail
+    }
+    
+    var userId: String? {
+        firebaseAuth.userId
     }
 }
