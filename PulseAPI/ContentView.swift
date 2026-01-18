@@ -11,18 +11,7 @@ struct ContentView: View {
     @EnvironmentObject private var router: AppRouter
     
     var body: some View {
-        Group {
-            switch router.currentRoute {
-            case .dashboard:
-                Text("Dashboard")
-            case .endpoints:
-                Text("Endpoints")
-            case .incidents:
-                Text("Incidents")
-            case .settings:
-                Text("Settings")
-            }
-        }
+        MainTabView()
     }
 }
 
