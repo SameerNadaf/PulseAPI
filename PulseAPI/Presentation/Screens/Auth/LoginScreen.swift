@@ -118,8 +118,10 @@ struct LoginScreen: View {
                         signInWithGoogle()
                     } label: {
                         HStack(spacing: 12) {
-                            Image(systemName: "g.circle.fill")
-                                .font(.title2)
+                            Image("google")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
                             Text("Continue with Google")
                                 .fontWeight(.medium)
                         }
