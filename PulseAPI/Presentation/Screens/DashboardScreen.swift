@@ -151,27 +151,11 @@ struct OverallHealthCard: View {
     var body: some View {
         VStack(spacing: 16) {
             // Health Ring
-            ZStack {
-                Circle()
-                    .stroke(Color(.systemGray5), lineWidth: 12)
-                    .frame(width: 120, height: 120)
-                
-                Circle()
-                    .trim(from: 0, to: CGFloat(healthPercentage) / 100)
-                    .stroke(healthColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .frame(width: 120, height: 120)
-                    .rotationEffect(.degrees(-90))
-                    .animation(.easeOut(duration: 0.5), value: healthPercentage)
-                
-                VStack(spacing: 2) {
-                    Text("\(healthPercentage)%")
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(healthColor)
-                    Text("Health")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-            }
+            ReliabilityScoreView(
+                score: Double(healthPercentage),
+                trend: .stable, // TODO: Get actual trend from backend
+                size: 140
+            )
             
             // Stats Row
             HStack(spacing: 32) {

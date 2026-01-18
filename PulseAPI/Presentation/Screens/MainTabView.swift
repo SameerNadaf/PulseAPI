@@ -24,6 +24,15 @@ struct MainTabView: View {
                             AddEndpointScreen()
                         }
                     }
+                    .toolbar {
+                        ToolbarItem(placement: .topBarTrailing) {
+                            NavigationLink {
+                                NotificationCenterScreen()
+                            } label: {
+                                Label("Notifications", systemImage: "bell")
+                            }
+                        }
+                    }
             }
             .tabItem {
                 Label("Dashboard", systemImage: "chart.bar.fill")
