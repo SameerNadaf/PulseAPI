@@ -15,9 +15,22 @@
 		2F72743B2F1CCBEE0001C3E9 /* PulseAPI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PulseAPI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		2F3435942F1CE8CD002BAD0D /* Exceptions for "PulseAPI" folder in "PulseAPI" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 2F72743A2F1CCBEE0001C3E9 /* PulseAPI */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		2F72743D2F1CCBEE0001C3E9 /* PulseAPI */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				2F3435942F1CE8CD002BAD0D /* Exceptions for "PulseAPI" folder in "PulseAPI" target */,
+			);
 			path = PulseAPI;
 			sourceTree = "<group>";
 		};
@@ -268,6 +281,7 @@
 				DEVELOPMENT_TEAM = 5G2PCG747N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PulseAPI/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -296,6 +310,7 @@
 				DEVELOPMENT_TEAM = 5G2PCG747N;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = PulseAPI/Info.plist;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;

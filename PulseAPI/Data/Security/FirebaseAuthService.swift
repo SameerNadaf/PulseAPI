@@ -7,6 +7,8 @@
 
 import Foundation
 import FirebaseAuth
+import FirebaseCore
+import GoogleSignIn
 
 enum AuthError: LocalizedError {
     case invalidEmail
@@ -15,6 +17,8 @@ enum AuthError: LocalizedError {
     case userNotFound
     case wrongPassword
     case networkError
+    case googleSignInFailed
+    case noRootViewController
     case unknown(String)
     
     var errorDescription: String? {
@@ -31,6 +35,10 @@ enum AuthError: LocalizedError {
             return "Incorrect password"
         case .networkError:
             return "Network error. Please check your connection"
+        case .googleSignInFailed:
+            return "Google Sign-In failed. Please try again"
+        case .noRootViewController:
+            return "Unable to present sign-in screen"
         case .unknown(let message):
             return message
         }
@@ -93,7 +101,7 @@ final class FirebaseAuthService: ObservableObject {
         }
     }
     
-    // MARK: - Sign Up
+    // MARK: - Sign Up with Email
     func signUp(email: String, password: String) async throws {
         isLoading = true
         defer { isLoading = false }
@@ -107,7 +115,7 @@ final class FirebaseAuthService: ObservableObject {
         }
     }
     
-    // MARK: - Sign In
+    // MARK: - Sign In with Email
     func signIn(email: String, password: String) async throws {
         isLoading = true
         defer { isLoading = false }
@@ -121,8 +129,50 @@ final class FirebaseAuthService: ObservableObject {
         }
     }
     
+    // MARK: - Sign In with Google
+    func signInWithGoogle() async throws {
+        isLoading = true
+        defer { isLoading = false }
+        
+        guard let clientID = FirebaseApp.app()?.options.clientID else {
+            throw AuthError.googleSignInFailed
+        }
+        
+        let config = GIDConfiguration(clientID: clientID)
+        GIDSignIn.sharedInstance.configuration = config
+        
+        guard let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+              let rootViewController = windowScene.windows.first?.rootViewController else {
+            throw AuthError.noRootViewController
+        }
+        
+        do {
+            let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: rootViewController)
+            
+            guard let idToken = result.user.idToken?.tokenString else {
+                throw AuthError.googleSignInFailed
+            }
+            
+            let credential = GoogleAuthProvider.credential(
+                withIDToken: idToken,
+                accessToken: result.user.accessToken.tokenString
+            )
+            
+            let authResult = try await Auth.auth().signIn(with: credential)
+            currentUser = authResult.user
+            isAuthenticated = true
+        } catch {
+            if (error as NSError).code == GIDSignInError.canceled.rawValue {
+                // User cancelled, don't throw error
+                return
+            }
+            throw AuthError.googleSignInFailed
+        }
+    }
+    
     // MARK: - Sign Out
     func signOut() throws {
+        GIDSignIn.sharedInstance.signOut()
         try Auth.auth().signOut()
         currentUser = nil
         isAuthenticated = false
@@ -170,4 +220,9 @@ final class FirebaseAuthService: ObservableObject {
     var displayName: String? {
         currentUser?.displayName
     }
+    
+    var photoURL: URL? {
+        currentUser?.photoURL
+    }
 }
+

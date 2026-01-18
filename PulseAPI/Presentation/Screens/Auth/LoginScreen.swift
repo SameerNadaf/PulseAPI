@@ -113,6 +113,29 @@ struct LoginScreen: View {
                     }
                     .padding(.horizontal)
                     
+                    // Google Sign-In Button
+                    Button {
+                        signInWithGoogle()
+                    } label: {
+                        HStack(spacing: 12) {
+                            Image(systemName: "g.circle.fill")
+                                .font(.title2)
+                            Text("Continue with Google")
+                                .fontWeight(.medium)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color(.secondarySystemGroupedBackground))
+                        .foregroundColor(.primary)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color(.separator), lineWidth: 1)
+                        )
+                    }
+                    .disabled(authService.isLoading)
+                    .padding(.horizontal)
+                    
                     // Sign Up Link
                     VStack(spacing: 8) {
                         Text("Don't have an account?")
@@ -152,6 +175,20 @@ struct LoginScreen: View {
                 try await authService.signIn(email: email, password: password)
             } catch let error as AuthError {
                 errorMessage = error.errorDescription ?? "Login failed"
+                showError = true
+            } catch {
+                errorMessage = error.localizedDescription
+                showError = true
+            }
+        }
+    }
+    
+    private func signInWithGoogle() {
+        Task {
+            do {
+                try await authService.signInWithGoogle()
+            } catch let error as AuthError {
+                errorMessage = error.errorDescription ?? "Google Sign-In failed"
                 showError = true
             } catch {
                 errorMessage = error.localizedDescription
