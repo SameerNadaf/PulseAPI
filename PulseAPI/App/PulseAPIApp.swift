@@ -16,6 +16,10 @@ struct PulseAPIApp: App {
     init() {
         // Initialize Firebase
         FirebaseApp.configure()
+        
+        // Initialize AuthManager early to set up auth state observer
+        // This ensures userId is set before any API calls
+        _ = AuthManager.shared
     }
     
     var body: some Scene {
