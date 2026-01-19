@@ -79,6 +79,7 @@ struct SettingsScreen: View {
                 } label: {
                     Label("Theme", systemImage: "paintbrush.fill")
                 }
+                .pickerStyle(.menu)
             }
             
             // Notifications Section
