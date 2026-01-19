@@ -78,6 +78,7 @@ final class FirebaseAuthService: ObservableObject {
     @Published private(set) var currentUser: User?
     @Published private(set) var isAuthenticated = false
     @Published private(set) var isLoading = false
+    @Published private(set) var isInitializing = true
     
     private var authStateListener: AuthStateDidChangeListenerHandle?
     
@@ -97,6 +98,7 @@ final class FirebaseAuthService: ObservableObject {
             Task { @MainActor in
                 self?.currentUser = user
                 self?.isAuthenticated = user != nil
+                self?.isInitializing = false
             }
         }
     }

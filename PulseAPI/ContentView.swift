@@ -13,13 +13,28 @@ struct ContentView: View {
     
     var body: some View {
         Group {
-            if authService.isAuthenticated {
+            if authService.isInitializing {
+                // Splash screen while checking auth state
+                ZStack {
+                    Color(.systemBackground)
+                        .ignoresSafeArea()
+                    
+                    VStack(spacing: 16) {
+                        Image(systemName: "waveform.path.ecg")
+                            .font(.system(size: 60))
+                            .foregroundStyle(.blue)
+                        Text("PulseAPI")
+                            .font(.title.bold())
+                    }
+                }
+            } else if authService.isAuthenticated {
                 MainTabView()
             } else {
                 LoginScreen()
             }
         }
-        .animation(.easeInOut, value: authService.isAuthenticated)
+        .animation(.easeInOut(duration: 0.3), value: authService.isInitializing)
+        .animation(.easeInOut(duration: 0.3), value: authService.isAuthenticated)
     }
 }
 
