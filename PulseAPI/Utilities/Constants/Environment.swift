@@ -26,11 +26,11 @@ enum APIConfig {
     static var baseURL: String {
         switch AppEnvironment.current {
         case .development:
-            return "http://localhost:8787"
+            return "https://pulseapi-backend.nsameernadaf.workers.dev"
         case .staging:
-            return "https://api-staging.pulseapi.dev"
+            return "https://pulseapi-backend.nsameernadaf.workers.dev"
         case .production:
-            return "https://api.pulseapi.dev"
+            return "https://pulseapi-backend.nsameernadaf.workers.dev"
         }
     }
     
@@ -54,7 +54,7 @@ enum APIConfig {
 enum AppConstants {
     // MARK: - App Identity
     static let appName = "PulseAPI"
-    static let bundleID = "com.pulseapi.app"
+    static let bundleID = "com.pulseapi.PulseAPI"
     
     // MARK: - Subscription
     static let freeEndpointLimit = 3
