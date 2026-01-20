@@ -72,6 +72,8 @@ struct EndpointDTO: Decodable, Identifiable {
     let isActive: Int
     let createdAt: String
     let updatedAt: String
+    let status: String?
+    let latencyMs: Double?
 }
 
 // MARK: - Incident Response

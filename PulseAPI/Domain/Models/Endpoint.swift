@@ -48,6 +48,8 @@ struct Endpoint: Identifiable, Codable, Hashable {
     var isActive: Bool
     var createdAt: Date
     var updatedAt: Date
+    var status: EndpointStatus
+    var latencyMs: Double?
     
     // MARK: - Computed Properties
     var host: String? {
@@ -57,9 +59,6 @@ struct Endpoint: Identifiable, Codable, Hashable {
     var path: String {
         URL(string: url)?.path ?? "/"
     }
-    
-    // Default status (actual status comes from health summary)
-    var status: EndpointStatus { .unknown }
 }
 
 // MARK: - Endpoint + Defaults
@@ -77,7 +76,9 @@ extension Endpoint {
             expectedStatusCodes: [200, 201, 204],
             isActive: true,
             createdAt: Date(),
-            updatedAt: Date()
+            updatedAt: Date(),
+            status: .unknown,
+            latencyMs: nil
         )
     }
 }

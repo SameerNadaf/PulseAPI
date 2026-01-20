@@ -106,6 +106,7 @@ extension EndpointDTO {
     func toDomain() -> Endpoint {
         let httpMethod = HTTPMethod(rawValue: method.uppercased()) ?? .get
         let statusCodes = parseStatusCodes(expectedStatusCodes)
+        let endpointStatus = EndpointStatus(rawValue: status ?? "unknown") ?? .unknown
         
         return Endpoint(
             id: id,
@@ -119,7 +120,9 @@ extension EndpointDTO {
             expectedStatusCodes: statusCodes,
             isActive: isActive == 1,
             createdAt: ISO8601DateFormatter().date(from: createdAt) ?? Date(),
-            updatedAt: ISO8601DateFormatter().date(from: updatedAt) ?? Date()
+            updatedAt: ISO8601DateFormatter().date(from: updatedAt) ?? Date(),
+            status: endpointStatus,
+            latencyMs: latencyMs
         )
     }
     
