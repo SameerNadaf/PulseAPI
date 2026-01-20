@@ -103,6 +103,11 @@ struct EndpointDetailScreen: View {
                 }
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
+                .onChange(of: selectedTimeRange) { _, newRange in
+                    Task {
+                        await viewModel.loadProbeData(hours: newRange.hours)
+                    }
+                }
                 
                 // Charts Section
                 chartsSection

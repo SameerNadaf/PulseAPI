@@ -61,7 +61,7 @@ final class EndpointDetailViewModel: ObservableObject {
     }
     
     // MARK: - Actions
-    func loadEndpoint() async {
+    func loadEndpoint(hours: Int = 24) async {
         guard !isLoading else { return }
         
         isLoading = true
@@ -74,19 +74,8 @@ final class EndpointDetailViewModel: ObservableObject {
             // Load health summary
             healthSummary = try await endpointRepository.getHealthSummary(endpointId: endpointId)
             
-            // Load probe history
-            let historyResponse = try await apiClient.request(
-                ProbesAPI.history(endpointId: endpointId, hours: 24),
-                expecting: APIResponse<[ProbeResultDTO]>.self
-            )
-            probeHistory = historyResponse.data ?? []
-            
-            // Load probe stats
-            let statsResponse = try await apiClient.request(
-                ProbesAPI.stats(endpointId: endpointId, hours: 24),
-                expecting: APIResponse<ProbeStatsDTO>.self
-            )
-            probeStats = statsResponse.data
+            // Load probe data for specified time range
+            await loadProbeData(hours: hours)
             
         } catch let networkError as NetworkError {
             error = networkError
@@ -97,8 +86,29 @@ final class EndpointDetailViewModel: ObservableObject {
         isLoading = false
     }
     
-    func refresh() async {
-        await loadEndpoint()
+    func loadProbeData(hours: Int) async {
+        do {
+            // Load probe history
+            let historyResponse = try await apiClient.request(
+                ProbesAPI.history(endpointId: endpointId, hours: hours),
+                expecting: APIResponse<[ProbeResultDTO]>.self
+            )
+            probeHistory = historyResponse.data ?? []
+            
+            // Load probe stats
+            let statsResponse = try await apiClient.request(
+                ProbesAPI.stats(endpointId: endpointId, hours: hours),
+                expecting: APIResponse<ProbeStatsDTO>.self
+            )
+            probeStats = statsResponse.data
+        } catch {
+            // Keep existing data if reload fails
+            print("Failed to load probe data: \(error)")
+        }
+    }
+    
+    func refresh(hours: Int = 24) async {
+        await loadEndpoint(hours: hours)
     }
     
     func toggleActive() async {
