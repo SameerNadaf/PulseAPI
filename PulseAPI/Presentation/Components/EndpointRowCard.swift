@@ -12,7 +12,7 @@ struct EndpointRowCard: View {
     let name: String
     let url: String
     let status: EndpointStatus
-    let latency: Double
+    let latency: Double?
     var showSparkline: Bool = true
     
     var body: some View {
@@ -44,7 +44,7 @@ struct EndpointRowCard: View {
             
             // Latency
             VStack(alignment: .trailing, spacing: 2) {
-                Text(latency > 0 ? "\(Int(latency))ms" : "--")
+                Text(latency.map { "\(Int($0))ms" } ?? "--")
                     .font(.subheadline.bold())
                     .foregroundStyle(latencyColor)
                 
@@ -63,7 +63,8 @@ struct EndpointRowCard: View {
     }
     
     private var latencyColor: Color {
-        switch latency {
+        guard let lat = latency else { return .secondary }
+        switch lat {
         case 0..<100: return .green
         case 100..<300: return .primary
         case 300..<500: return .orange
@@ -72,8 +73,9 @@ struct EndpointRowCard: View {
     }
     
     private func generateSparklineData() -> [Double] {
-        (0..<10).map { _ in
-            Double.random(in: max(0, latency - 50)...(latency + 50))
+        let base = latency ?? 100
+        return (0..<10).map { _ in
+            Double.random(in: max(0, base - 50)...(base + 50))
         }
     }
 }

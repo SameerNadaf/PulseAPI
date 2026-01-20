@@ -102,14 +102,16 @@ extension EndpointsViewModel {
                 method: .get, headers: nil, body: nil,
                 probeIntervalMinutes: 5, timeoutSeconds: 10,
                 expectedStatusCodes: [200], isActive: true,
-                createdAt: Date(), updatedAt: Date()
+                createdAt: Date(), updatedAt: Date(),
+                status: .healthy, latencyMs: 125
             ),
             Endpoint(
                 id: "2", name: "Payment Service", url: "payments.example.com",
                 method: .post, headers: nil, body: nil,
                 probeIntervalMinutes: 1, timeoutSeconds: 30,
                 expectedStatusCodes: [200, 201], isActive: true,
-                createdAt: Date(), updatedAt: Date()
+                createdAt: Date(), updatedAt: Date(),
+                status: .degraded, latencyMs: 450
             ),
         ]
         return vm

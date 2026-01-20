@@ -34,11 +34,11 @@ struct EndpointsScreen: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach(viewModel.filteredEndpoints) { endpoint in
-                            EndpointRowCard(
+                        EndpointRowCard(
                                 name: endpoint.name,
                                 url: endpoint.url,
                                 status: endpoint.status,
-                                latency: 0 // TODO: Get from health summary
+                                latency: endpoint.latencyMs
                             )
                             .onTapGesture {
                                 router.navigateToEndpoint(id: endpoint.id)
