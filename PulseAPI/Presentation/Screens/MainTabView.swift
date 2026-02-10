@@ -9,10 +9,10 @@ import SwiftUI
 
 struct MainTabView: View {
     @EnvironmentObject private var router: AppRouter
-    @State private var selectedTab: AppRoute = .dashboard
+
     
     var body: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: $router.currentRoute) {
             // Dashboard Tab
             NavigationStack(path: $router.dashboardPath) {
                 DashboardScreen()
@@ -79,9 +79,6 @@ struct MainTabView: View {
                 Label("Settings", systemImage: "gearshape.fill")
             }
             .tag(AppRoute.settings)
-        }
-        .onChange(of: selectedTab) { _, newTab in
-            router.currentRoute = newTab
         }
     }
 }
